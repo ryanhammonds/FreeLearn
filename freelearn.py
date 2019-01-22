@@ -10,7 +10,8 @@ segROIs = ["Left-Lateral-Ventricle", "Right-Lateral-Ventricle", "Left-Inf-Lat-Ve
 
 parcROIs = ["Left-bankssts", "Right-bankssts", "Left-caudalanteriorcingulate", "Right-caudalanteriorcingulate", "Left-caudalmiddlefrontal", "Right-caudalmiddlefrontal", "Left-cuneus", "Right-cuneus", "Left-entorhinal", "Right-entorhinal", "Left-fusiform", "Right-fusiform", "Left-inferiorparietal", "Right-inferiorparietal", "Left-inferiortemporal", "Right-inferiortemporal", "Left-isthmuscingulate", "Right-isthmuscingulate", "Left-lateraloccipital", "Right-lateraloccipital", "Left-lateralorbitofrontal", "Right-lateralorbitofrontal", "Left-lingual", "Right-lingual", "Left-medialorbitofrontal", "Right-medialorbitofrontal", "Left-middletemporal", "Right-middletemporal", "Left-parahippocampal", "Right-parahippocampal", "Left-paracentral", "Right-paracentral", "Left-parsopercularis", "Right-parsopercularis", "Left-parsorbitalis", "Right-parsorbitalis", "Left-parstriangularis", "Right-parstriangularis", "Left-pericalcarine", "Right-pericalcarine", "Left-postcentral", "Right-postcentral", "Left-posteriorcingulate", "Right-posteriorcingulate", "Left-precentral", "Right-precentral", "Left-precuneus", "Right-precuneus", "Left-rostralanteriorcingulate", "Right-rostralanteriorcingulate", "Left-rostralmiddlefrontal", "Right-rostralmiddlefrontal", "Left-superiorfrontal", "Right-superiorfrontal", "Left-superiorparietal", "Right-superiorparietal", "Left-superiortemporal", "Right-superiortemporal", "Left-supramarginal", "Right-supramarginal", "Left-frontalpole", "Right-frontalpole", "Left-temporalpole", "Right-temporalpole", "Left-transversetemporal", "Right-transversetemporal", "Left-insula", "Right-insula"]
 
-dirList = []
+# Returned Lists
+dirList = [0, 0]
 segList = []
 parcList = []
 
@@ -20,9 +21,11 @@ class FreeLearn(tk.Tk):
 		self.title('FreeLearn')
 		self.resizable(width=0, height=0)
 		self.geometry('{}x{}'.format(700, 700))
-		self.notebook = ttk.Notebook(width = 700, height = 700)
+		self.notebook = ttk.Notebook(width = 700, height = 650)
 		self.add_tab()
 		self.notebook.grid(row=0)
+		self.RUN = ttk.Button(self, text="Run")
+		self.RUN.grid(row=1, sticky='WE')
   
 	def add_tab(self):
 		tab1 = setupTab(self.notebook)
@@ -42,7 +45,7 @@ class FreeLearn(tk.Tk):
 			self.notebook.tab(3, state = 'normal')
 		elif gridSet == 0:
 			self.notebook.tab(3, state='disabled')
-  
+
 class setupTab(tk.Frame):
 	def __init__(self, parent, *args, **kwargs):
 		self.parent = parent
@@ -64,7 +67,7 @@ class setupTab(tk.Frame):
 		self.reconEntry = tk.Entry(self, width = 45)
 		self.reconEntry.grid(row = 2, column = 1, sticky = 'W', padx=10, pady=10)
 		reconPath = self.reconEntry.get()
-		self.reconSelect = tk.Button(self, text="Select", command= lambda: self.selectDir(rowIdx = 2, columnIdx = 1, outIdx = 0))
+		self.reconSelect = tk.Button(self, text="Select", command= lambda: self.selectDir(rowIdx = 2, columnIdx = 1, idx=0))
 		self.reconSelect.grid(row=2, column=2, sticky = 'W', padx=10, pady=10)
 
 		# Configures output dir row
@@ -73,7 +76,7 @@ class setupTab(tk.Frame):
 		self.outputEntry = tk.Entry(self, width = 45)
 		self.outputEntry.grid(row = 3, column = 1, sticky = 'W', padx=10, pady=10)
 		outputPath = self.outputEntry.get()
-		self.outputSelect = tk.Button(self, text="Select", command= lambda: self.selectDir(rowIdx = 3, columnIdx = 1, outIdx = 1))
+		self.outputSelect = tk.Button(self, text="Select", command= lambda: self.selectDir(rowIdx = 3, columnIdx = 1, idx=1))
 		self.outputSelect.grid(row=3, column=2, sticky = 'W', padx=10, pady=10)
 
 		# Configures csv row
@@ -84,20 +87,24 @@ class setupTab(tk.Frame):
 		csvFile = self.csvEntry.get()
 		self.csvSelect = tk.Button(self, text="Select", command= lambda: self.selectCSV(rowIdx = 4, columnIdx = 1))
 		self.csvSelect.grid(row=4, column=2, sticky = "W", padx=10, pady=10)
-	
-	
-	def selectDir(self, rowIdx, columnIdx, outIdx):
+
+	def selectDir(self, rowIdx, columnIdx, idx):
 		self.dir_ask = filedialog.askdirectory()
 		self.dir_path = tk.StringVar()
 		self.dir_path.set(self.dir_ask)
 		self.dirEntry = tk.Entry(self, width = 45, textvariable = self.dir_path)
 		self.dirEntry.grid(row = rowIdx, column = columnIdx)
 		dirPath = self.dirEntry.get()
-		dirList.insert(outIdx, dirPath)
-
+		dirList[idx] = dirPath
+		
+	
 	def selectCSV(self, rowIdx, columnIdx):
 		#global csv_path
 		#global fileEntryVar
+		global idOut
+		global lblOut	
+		idOut = []
+		lblOut = []	
 		self.filename = filedialog.askopenfilename(filetypes = [("CSV File With Header", "*.csv")])
 		self.csv_path = tk.StringVar()
 		self.csv_path.set(self.filename)
@@ -113,21 +120,29 @@ class setupTab(tk.Frame):
 			for i in self.reader:
 				csvArray.append(i)
 		self.csvHeader = csvArray[0]
-		
-		def getIDVar(*args):
-			global varSelect
-			varSelect = self.idVar.get()
-	
+
+		# Select and return ID variable	
 		self.idLabel = tk.Label(self, text = 'Subject ID Variable:')
 		self.idLabel.grid(row = 5, column = 0, sticky = "W", padx=10, pady=10)
-		
-		self.idVar = tk.StringVar(self)
-		self.idVar.set(self.csvHeader[0])
-		getIDVar()
-		self.idW = tk.OptionMenu(self, self.idVar, *self.csvHeader, command = getIDVar)	
-		self.idW.config(width=10)
-		self.idW.grid(row = 5, column = 1, sticky = 'W', padx = 10, pady = 10)
-		
+		self.idInit = tk.StringVar(self)
+		self.idInit.set(self.csvHeader[0])
+		self.idMenu = tk.OptionMenu(self, self.idInit, *self.csvHeader, command = lambda : self.getVar(self.idInit, idOut))
+		self.idMenu.config(width=10)
+		self.idMenu.grid(row = 5, column = 1, sticky = 'W', padx = 10, pady = 10)
+		# Select and return classifier labels
+		self.lblInit = tk.StringVar(self)
+		self.lblInit.set(self.csvHeader[0])
+		self.lblLabel = tk.Label(self, text = 'Classification Labels:')
+		self.lblLabel.grid(row = 6, column = 0, sticky = "W", padx = 10, pady = 10)
+		self.lblMenu = tk.OptionMenu(self, self.lblInit, *self.csvHeader, command = lambda : self.getVar(self.lblInit, lblOut))	
+		self.lblMenu.config(width = 10)
+		self.lblMenu.grid(row = 6, column = 1, sticky = 'W', padx = 10, pady = 10)
+
+	def getVar(self, inVar, outVar):
+		outVar.clear()
+		outVar.append(inVar.get())
+		return outVar
+	
 class roiTab(tk.Frame):
 	def __init__(self, parent, *args, **kwargs):
 
@@ -168,10 +183,10 @@ class roiTab(tk.Frame):
 		  self.segSelect.insert(idx+1, roi)
 
 		# Bind click to list movement
-		self.segSelect.bind('<<ListboxSelect>>', lambda event: moveItem(self.segSelect, self.segSelect2, segROIs, segList))
-		self.segSelect2.bind('<<ListboxSelect>>', lambda event: moveItem(self.segSelect2, self.segSelect, segROIs, segList))
-		self.parcSelect.bind('<<ListboxSelect>>', self.parcMoveRight)
-		self.parcSelect2.bind('<<ListboxSelect>>', self.parcMoveLeft)
+		self.segSelect.bind('<<ListboxSelect>>', lambda event: moveItem(self.segSelect, self.segSelect2, segROIs, segList, mode='right'))
+		self.segSelect2.bind('<<ListboxSelect>>', lambda event: moveItem(self.segSelect2, self.segSelect, segROIs, segList, mode='left'))
+		self.parcSelect.bind('<<ListboxSelect>>', lambda event: moveItem(self.parcSelect, self.parcSelect2, parcROIs, parcList, mode='right'))
+		self.parcSelect2.bind('<<ListboxSelect>>', lambda event: moveItem(self.parcSelect2, self.parcSelect, parcROIs, parcList, mode='left'))
 	
 		# Configure Normalization Row
 		self.normLabel = tk.Label(self, text = "ROI Normalization:")
@@ -182,8 +197,6 @@ class roiTab(tk.Frame):
 		self.normW = tk.OptionMenu(self, self.normVar, *self.normOptions, command = self.getNorm)	
 		self.normW.config(width=25, padx = 10, pady = 10)
 		self.normW.grid(row = 6, column = 0)
-
-	
 
 	# Determines normalization option
 	def getNorm(self, *args):
@@ -250,15 +263,6 @@ class roiTab(tk.Frame):
 		self.levelMenu.config(width=25, padx = 10, pady = 10)
 		self.levelMenu.grid(row = 7, column = 2)
 
-def moveItem(list1, list2, origList, selectList):
-	#w = event.widget
-	idx = int(list1.curselection()[0])
-	value = list1.get(idx)
-	origIdx = segROIs.index(value)
-	list2.insert(origIdx,value)
-	list1.delete(idx)
-	selectList.append(value)
-
 class classifierTab(tk.Frame):
 	def __init__(self, parent, *args, **kwargs):
 		self.parent = parent
@@ -271,7 +275,9 @@ class classifierTab(tk.Frame):
 		classTypes = ['SVM', 'Random Forest']
 		self.classSelect = tk.StringVar(self)
 		self.classSelect.set(classTypes[0])
-		self.classMenu = tk.OptionMenu(self, self.classSelect, *classTypes)
+		global classOut
+		classOut = []
+		self.classMenu = tk.OptionMenu(self, self.classSelect, *classTypes, command = lambda _: (classOut.clear(), classOut.append(self.classSelect.get())))
 		self.classMenu.config(width=15)
 		self.classMenu.grid(row = 1, column = 1, sticky = 'W', padx = 10, pady = 10)
 	
@@ -281,7 +287,9 @@ class classifierTab(tk.Frame):
 		self.trainInit = tk.StringVar(self)
 		self.trainInit.set(0.5)
 		self.trainEntry = tk.Entry(self, width = 5, textvariable = self.trainInit, justify = 'center')
+		trainOut = self.trainEntry.get()
 		self.trainEntry.grid(row = 2, column = 1, sticky = 'W', padx=10, pady=10)
+		
 		# Test row
 		self.testSize = tk.Label(self, text = 'Testing Proportion:')
 		self.testSize.grid(row = 3, column = 0, sticky = 'W', padx=10, pady=10)
@@ -319,6 +327,7 @@ class classifierTab(tk.Frame):
 		self.kernelMenu = tk.OptionMenu(self, self.kernelInit, *self.kernelOptions)	
 		self.kernelMenu.config(width=15)
 		self.kernelMenu.grid(row = 6, column = 1, sticky = 'W', padx = 10, pady = 10)
+
 		# Cost
 		self.costLabel = tk.Label(self, text = "Cost:")
 		self.costLabel.grid(row = 7, column = 0, sticky = 'W', padx = 10, pady = 10)
@@ -326,7 +335,8 @@ class classifierTab(tk.Frame):
 		self.costInit.set(1)
 		self.costEntry = tk.Entry(self, width = 10, textvariable = self.costInit, justify = 'center')
 		self.costEntry.grid(row = 7, column = 1, sticky = 'W', padx = 10, pady = 10)
-		# Gamme
+
+		# Gamma
 		self.gammaLabel = tk.Label(self, text = "Gamma:")
 		self.gammaLabel.grid(row = 8, column = 0, sticky = 'W', padx = 10, pady = 10)
 		self.gammaInit = tk.StringVar(self)
@@ -359,7 +369,6 @@ class classifierTab(tk.Frame):
 		global gridSet
 		gridSet = self.gridYN.get()
 		run.checkGridStatus()
-		print(gridSet)
 		if gridSet == 1:
 			self.kernelMenu.config(state = "disabled")
 			self.costEntry.config(state = "disabled")
@@ -370,51 +379,152 @@ class classifierTab(tk.Frame):
 			self.gammaEntry.config(state = "normal")
 		return gridSet
 
+	def classReturn(self, *args):
+		global classOut
+		classOut = self.classSelect.get()
+		return classOut
+		
+
 class gridTab(tk.Frame):
+	global kernelList
+	kernelList = []
 	def __init__(self, parent, *args, **kwargs):
 		self.parent = parent
 		tk.Frame.__init__(self,*args,**kwargs)
 		# Configures kernel
-
 		self.kernels = ["Linear", "Radial Bias Function", "Poly", "Sigmoid"]
-
-		self.kernelLabel = tk.Label(self, text = "Kernels:")
-		self.kernelLabel.grid(row = 1, column = 0, sticky = 'W', padx=10, pady=10)
-
-		self.kernelSelect = tk.Listbox(self, width = 25)
-		self.kernelSelect.grid(row = 2, column = 0, padx = 10, pady = 10)
-		self.kernelSelect.config(width = 20, height = 4) 
-
-		self.kernelArrows = tk.Label(self, text = ">>")
-		self.kernelArrows.grid(row = 2, column = 1, padx = 10, pady = 10)
 	
-		self.kernelSelect2 = tk.Listbox(self, width=25)
-		self.kernelSelect2.grid(row = 2, column = 2, padx = 10, pady = 10)
+		self.kernelLabel = tk.Label(self, text = "Kernels:")
+		self.kernelLabel.grid(row = 1, column = 0, sticky = 'W', pady = 10)
+		self.kernelFrame = tk.Frame(self)
+		self.kernelFrame.grid(row = 1, column = 1, padx = 10, pady = 10, sticky = 'W')
+		self.kernelSelect = tk.Listbox(self.kernelFrame, width = 25)
+		self.kernelSelect.pack(side = 'left')
+		self.kernelSelect.config(width = 20, height = 4) 
+		self.kernelArrows = tk.Label(self.kernelFrame, text = ">>")
+		self.kernelArrows.pack(side = 'left', padx = 10)
+		self.kernelSelect2 = tk.Listbox(self.kernelFrame, width=25)
+		self.kernelSelect2.pack(side = 'left')
 		self.kernelSelect2.config(width = 20, height = 4)
-
+		
+		# Listbox item movement
 		for idx,kern in enumerate(self.kernels):
 			self.kernelSelect.insert(idx+1, kern)
 
-		#self.kernelSelect.bind('<<ListboxSelect>>', MoveRight(event, whichClass=gridTab, box1 = self.kernelSelect, box2 = self.kernelSelect2, optionList = self.kernels, outList = kernList))
-		#self.kernelSelect2.bind('<<ListboxSelect>>', MoveLeft) 
+		self.kernelSelect.bind('<<ListboxSelect>>', lambda event: moveItem(self.kernelList, self.kernelSelect2, self.kernels, kernelList, mode = 'right'))
+		self.kernelSelect2.bind('<<ListboxSelect>>', lambda event: moveItem(self.kernelSelect2, self.kernelSelect, self.kernels, kernelList, mode = 'left')) 
+		
+		# Configures cost
+		self.costLabel = tk.Label(self, text = "Cost:")
+		self.costLabel.grid(row = 2, column = 0, sticky = 'W', pady = 1)
 
+		self.costFrame = tk.Frame(self)
+		self.costFrame.grid(row = 2, column = 1, sticky = 'W', padx = 10)
+		
+		self.minLabel = tk.Label(self.costFrame, text='Min = ')
+		self.minLabel.pack(side='left')
+		self.minDefault = tk.StringVar()
+		self.minDefault.set(0)
+		self.minEntry = tk.Entry(self.costFrame, textvariable = self.minDefault, width = 6, justify = 'center')
+		self.minEntry.pack(side='left')
+		
+		self.maxFrame = tk.Frame(self)
+		self.maxFrame.grid(row = 3, column = 2, sticky = 'W', padx = 10)
+		self.maxLabel = tk.Label(self.costFrame, text='Max = ')
+		self.maxLabel.pack(side='left')
+		self.maxDefault = tk.StringVar()
+		self.maxDefault.set(100)
+		self.maxEntry = tk.Entry(self.costFrame, textvariable = self.maxDefault, width = 6, justify = 'center')
+		self.maxEntry.pack(side='left')
+		
+		self.stepFrame = tk.Frame(self)
+		self.stepFrame.grid(row = 3, column = 3, sticky = 'W', padx = 10)
+		self.stepLabel = tk.Label(self.costFrame, text='Step = ')
+		self.stepLabel.pack(side='left')
+		self.stepDefault = tk.StringVar()
+		self.stepDefault.set(10)
+		self.stepEntry = tk.Entry(self.costFrame, textvariable = self.stepDefault, width = 6, justify = 'center')
+		self.stepEntry.pack(side='left')
 	
+		# Configures gamma
+		self.gammaLabel = tk.Label(self, text = "Gamma:")
+		self.gammaLabel.grid(row = 3, column = 0, sticky = 'W', pady = 10)
 
+		self.gammaFrame = tk.Frame(self)
+		self.gammaFrame.grid(row = 3, column = 1, sticky = 'W', padx = 10)
+		
+		self.gammaMinLabel = tk.Label(self.gammaFrame, text='Min = ')
+		self.gammaMinLabel.pack(side='left')
+		self.gammaMinDefault = tk.StringVar()
+		self.gammaMinDefault.set(0)
+		self.gammaMinEntry = tk.Entry(self.gammaFrame, textvariable = self.minDefault, width = 6, justify = 'center')
+		self.gammaMinEntry.pack(side='left')
+		
+		self.gammaMaxFrame = tk.Frame(self)
+		self.gammaMaxFrame.grid(row = 4, column = 2, sticky = 'W', padx = 10)
+		self.gammaMaxLabel = tk.Label(self.gammaFrame, text='Max = ')
+		self.gammaMaxLabel.pack(side='left')
+		self.gammaMaxDefault = tk.StringVar()
+		self.gammaMaxDefault.set(100)
+		self.gammaMaxEntry = tk.Entry(self.gammaFrame, textvariable = self.maxDefault, width = 6, justify = 'center')
+		self.gammaMaxEntry.pack(side='left')
+		
+		self.gammaStepFrame = tk.Frame(self)
+		self.gammaStepFrame.grid(row = 4, column = 3, sticky = 'W', padx = 10)
+		self.gammaStepLabel = tk.Label(self.gammaFrame, text='Step = ')
+		self.gammaStepLabel.pack(side='left')
+		self.gammaStepDefault = tk.StringVar()
+		self.gammaStepDefault.set(10)
+		self.gammaStepEntry = tk.Entry(self.gammaFrame, textvariable = self.stepDefault, width = 6, justify = 'center')
+		self.gammaStepEntry.pack(side='left')
 
+		# Configure CPUs 
+		self.jobsLabel = tk.Label(self, text = 'CPUs: ')
+		self.jobsLabel.grid(row = 5, column = 0, sticky = 'W', pady = 10)
+		self.jobsDefault = tk.StringVar()
+		self.jobsDefault.set(1)
+		self.jobsEntry = tk.Entry(self, textvariable = self.jobsDefault, width = 6, justify = 'center')
+		self.jobsEntry.grid(row = 5, column = 1, sticky='W', padx = 10, pady = 10)
+
+# Move items from one list to another, updating an output list
+# Used in ROI and Grid Search tab
+def moveItem(list1, list2, origList, selectList, mode):
+	idx = int(list1.curselection()[0])
+	value = list1.get(idx)
+	origIdx = origList.index(value)
+	list2.insert(origIdx,value)
+	list1.delete(idx)
+
+	selectList.clear()
+	if mode == 'right':
+		for idx in range(0,list2.size()):
+			item = list2.get(idx)
+			selectList.append(item)
+	elif mode == 'left':
+		for idx in range(0,list1.size()):
+			item = list1.get(idx)
+			selectList.append(item)
+	return selectList	
+	
+'''
+def getVar(inVar, outVar):
+	outVar.clear()
+	outVar.append(inVar.get())
+	return outVar
+'''
 
 run = FreeLearn()
 run.mainloop()
 
-''' Tab1
+'''
+Tab1
 # Returns CSV
 print(csvArray)
 # Returns ID Variable
 print(varSelect)
 # Returns recon and output paths
 print(dirList)
-'''
-
-'''Tab2
+Tab2
 # Returns ROIs
 print(segList)
 print(parcList)
@@ -423,4 +533,6 @@ print(norm)
 # Returns sub-group level
 print(varLevels)
 '''
+#print(classOut)
+print(dirList)
 
